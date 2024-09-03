@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: setup-replication-script
+data:
+  setup-replication.sh: |
+    #!/bin/sh
+
+    MAX_ATTEMPTS=30
+    SLEEP_INTERVAL=5
+
+    # Loop to check MySQL server availability
+    for ((i=1; i<=MAX_ATTEMPTS; i++)); do
+      if mysql -h mysql -uroot -ppassword -e "SELECT 1;"; then
+        echo "MySQL server is available."
+        break
+      else
+        echo "MySQL server is not yet available. Waiting for $SLEEP_INTERVAL seconds..."
+        sleep "$SLEEP_INTERVAL"
+      fi
+    done
+
+    echo "Dumping primary database..."
+    mysqldump -h mysql -uroot -ppassword --all-databases --single-transaction --quick --lock-tables=false > /tmp/dbdump.sql
+    mysql -h mysql2 -uroot -ppassword < /tmp/dbdump.sql
+
+    # Create the replication user on the primary server
+    mysql -h mysql -uroot -ppassword -e "CREATE USER IF NOT EXISTS 'repl'@'%' IDENTIFIED WITH 'mysql_native_password' BY 'repl_password';"
+    mysql -h mysql -uroot -ppassword -e "GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';"
+    mysql -h mysql -uroot -ppassword -e "FLUSH PRIVILEGES;"
+
+    # Get the master status and log it
+    mysql -h mysql -uroot -ppassword -e 'FLUSH TABLES WITH READ LOCK; SHOW MASTER STATUS\G' > /tmp/master-status.txt
+    mysql -h mysql -uroot -ppassword -e 'UNLOCK TABLES'
+    sleep 5
+
+    # Log the master status
+    echo "Master Status:"
+    cat /tmp/master-status.txt
+
+    # Extract the master log file and position
+    MASTER_LOG_FILE=$(grep -i 'File:' /tmp/master-status.txt | awk '{print $2}')
+    MASTER_LOG_POS=$(grep -i 'Position:' /tmp/master-status.txt | awk '{print $2}')
+
+    # Log the extracted values
+    echo "MASTER_LOG_FILE: $MASTER_LOG_FILE"
+    echo "MASTER_LOG_POS: $MASTER_LOG_POS"
+
+    # Check if variables are set
+    if [ -z "$MASTER_LOG_FILE" ] || [ -z "$MASTER_LOG_POS" ]; then
+      echo "Error: MASTER_LOG_FILE or MASTER_LOG_POS is empty"
+      exit 1
+    fi
+
+    # Configure the replicas
+    mysql -h mysql2 -uroot -ppassword -e "CHANGE MASTER TO MASTER_HOST='mysql', MASTER_USER='repl', MASTER_PASSWORD='repl_password', MASTER_LOG_FILE='$MASTER_LOG_FILE', MASTER_LOG_POS=$MASTER_LOG_POS; START SLAVE;"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-replication
+spec:
+  template:
+    spec:
+      containers:
+        - name: setup-replication
+          image: mysql:8.0
+          volumeMounts:
+            - name: script
+              mountPath: /scripts/setup-replication.sh
+              subPath: setup-replication.sh
+          command: ["/bin/sh"]
+          args: ["/scripts/setup-replication.sh"]
+      restartPolicy: Never
+      volumes:
+        - name: script
+          configMap:
+            name: setup-replication-script
