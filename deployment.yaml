@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vitess-migration-test
+  labels:
+    app: vitess-migration-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vitess-migration-test
+  template:
+    metadata:
+      labels:
+        app: vitess-migration-test
+    spec:
+      containers:
+      - name: vitess-migration-test
+        image: vitess-migration-test
+        command: ["rake", "spec"]
