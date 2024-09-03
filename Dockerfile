@@ -5,10 +5,9 @@ RUN bundle config --global frozen 1
 
 WORKDIR /usr/src/app
 
-# COPY Gemfile Gemfile.lock ./
-# RUN bundle install
-
 COPY . .
+
+# install dependencies after copying all considering gemspec load issue
 RUN bundle install
 
 CMD ["tail", "-f", "/dev/null"]

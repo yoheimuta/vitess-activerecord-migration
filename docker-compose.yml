@@ -1,0 +1,16 @@
+services:
+  migration:
+    build: .
+    command: bash -c "bundle install -j4 && tail -f /dev/null"
+    container_name: migration
+    volumes:
+      - bundle:/usr/local/bundle
+      - .:/migration
+    networks:
+      - migration-default
+
+networks:
+  migration-default:
+
+volumes:
+  bundle:
