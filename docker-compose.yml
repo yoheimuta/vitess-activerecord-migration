@@ -8,9 +8,24 @@ services:
       - .:/migration
     networks:
       - migration-default
+  endtoend:
+    build: ./test/endtoend
+    container_name: migration-endtoend
+    privileged: true
+    volumes:
+      - .:/endtoend
+      - tmp:/endtoend/tmp
+    ports:
+      # http
+      - "53303:3303"
+      # mysql (vtgate)
+      - "53306:3306"
+    networks:
+      - migration-default
 
 networks:
   migration-default:
 
 volumes:
   bundle:
+  tmp:
