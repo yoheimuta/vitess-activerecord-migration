@@ -69,7 +69,7 @@ spec:
 
   keyspaces:
   - name: main
-    databaseName: cocalero-api-development
+    databaseName: test-database
     durabilityPolicy: none
     turndownPolicy: Immediate
     vitessOrchestrator:
@@ -107,7 +107,7 @@ spec:
               user: root
               host: mysql
               port: 3306
-              database: cocalero-api-development
+              database: test-database
               credentialsSecret:
                 name: example-cluster-config
                 key: ext_db_credentials_secret.json
@@ -129,7 +129,7 @@ spec:
               user: root
               host: mysql2
               port: 3306
-              database: cocalero-api-development
+              database: test-database
               credentialsSecret:
                 name: example-cluster-config
                 key: ext_db_credentials_secret.json

@@ -1,0 +1,11 @@
+class RailsSupport
+  DATABASE_CONFIG: String
+
+  INIT_CONFIG: String
+
+  @rails_root: String
+
+  def setup: -> void
+
+  def cleanup : -> void
+end

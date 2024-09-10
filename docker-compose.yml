@@ -8,7 +8,7 @@ services:
       - .:/migration
     networks:
       - migration-default
-  endtoend:
+  migration-endtoend:
     build: ./test/endtoend
     container_name: migration-endtoend
     privileged: true
