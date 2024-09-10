@@ -3,38 +3,38 @@
 require "fileutils"
 
 class RailsSupport
-  # Configure the database connection in the Rails app (using MySQL/Vitess)
-  DATABASE_CONFIG = <<~DBCONFIG
-    default: &default
-      adapter: mysql2
-      encoding: utf8
-      username: user
-      host: endtoend
-
-    test:
-      <<: *default
-      database: main
-  DBCONFIG
-
-  # Configure the Rails app to use the Vitess migration strategy
-  INIT_CONFIG = <<~INITCONFIG
-    require Rails.root.join("../../lib/vitess/activerecord/migration")
-
-    ActiveRecord::Migration.prepend(Vitess::Activerecord::Migration)
-  INITCONFIG
-
   def initialize
-    @rails_root = File.join(File.expand_path("../../", __dir__), "tmp", "test_app")
+    @rails_root = File.join(File.expand_path("../../", __dir__), "test", "endtoend", "rails_app")
+    @schema_backup_path = "#{@rails_root}/db/schema_backup.rb"
+    @schema_path = "#{@rails_root}/db/schema.rb"
+    @migration_files = []
   end
 
   def setup
-    FileUtils.mkdir_p(@rails_root)
-    system("rails new #{@rails_root} --skip-bundle --skip-test --skip-git --skip-spring --skip-listen", exception: true)
-    File.write("#{@rails_root}/config/database.yml", DATABASE_CONFIG)
-    File.write("#{@rails_root}/config/initializers/migration.rb", INIT_CONFIG)
+    run("rails db:schema:load")
+
+    # Save the current schema
+    FileUtils.cp(@schema_path, @schema_backup_path)
   end
 
   def cleanup
-    FileUtils.rm_rf(@rails_root)
+    # Clean up database tables
+    run("rake db:delete_all_tables")
+
+    # Restore the original schema
+    FileUtils.cp(@schema_backup_path, @schema_path)
+    FileUtils.rm(@schema_backup_path)
+
+    # Clean up migration files
+    @migration_files.each do |f|
+      FileUtils.rm(f)
+    end
+  end
+
+  def run(command)
+    # Change directory to @rails_root and run the Rails command
+    Dir.chdir(@rails_root) do
+      system("bundle exec #{command} RAILS_ENV=test", exception: true)
+    end
   end
 end

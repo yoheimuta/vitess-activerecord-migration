@@ -3,7 +3,14 @@ class RailsSupport
 
   INIT_CONFIG: String
 
+  @migration_files: [String]
   @rails_root: String
+
+  @schema_backup_path: String
+
+  @schema_path: String
+
+  def run: (String)-> void
 
   def setup: -> void
 

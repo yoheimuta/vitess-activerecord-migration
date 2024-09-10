@@ -38,5 +38,9 @@ module RailsApp
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    logger = ActiveSupport::Logger.new(STDOUT)
+    logger.formatter = ::Logger::Formatter.new
+    config.logger = ActiveSupport::TaggedLogging.new(logger)
   end
 end
