@@ -6,13 +6,11 @@ RSpec.describe Vitess::Activerecord::Migration do
   let(:rails) { RailsSupport.new }
 
   before do
-    p "before"
     rails.setup
   end
 
   after do
-    p "after"
-    rails.cleanup
+    # rails.cleanup
   end
 
   it "has a version number" do
