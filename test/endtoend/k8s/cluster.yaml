@@ -68,7 +68,7 @@ spec:
         memory: 128Mi
 
   keyspaces:
-  - name: main
+  - name: main-test
     databaseName: test-database
     durabilityPolicy: none
     turndownPolicy: Immediate

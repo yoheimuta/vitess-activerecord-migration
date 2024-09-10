@@ -12,3 +12,6 @@
 
 # rspec failure tracking
 .rspec_status
+
+test/endtoend/rails_app/log/*
+test/endtoend/rails_app/tmp/*
