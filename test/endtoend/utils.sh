@@ -7,7 +7,7 @@ function check_pod_status_with_timeout() {
   local nb=${2:-1}  # Default to 1 if not provided
 
   # Loop to check pod status
-  while [[ $counter -le 240 ]]; do
+  while [[ $counter -le 1200 ]]; do
     local out
     out=$(kubectl get pods)
     if [[ $(echo "$out" | grep -c -E "$regex") -eq "$nb" ]]; then

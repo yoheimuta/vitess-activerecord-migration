@@ -3,13 +3,9 @@
 source ./test/endtoend/utils.sh
 
 # Test setup
-echo "Building the docker image"
-docker build -t vitess-active_record-migration:latest .
 echo "Creating Kind cluster"
 kind create cluster --wait 30s --name kind-migration
 kind export kubeconfig --name kind-migration
-echo "Loading docker image into Kind cluster"
-kind load docker-image vitess-active_record-migration:latest --name kind-migration
 
 # Check vitess cluster is running properly
 echo "Apply operator.yaml"

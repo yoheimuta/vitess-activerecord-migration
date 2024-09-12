@@ -11,8 +11,8 @@ development:
 
 test:
   <<: *default
-  # host: migration-endtoend
-  # username: user
-  host: migration-mysql
-  username: root
+  host: migration-endtoend
+  username: user
+  # host: migration-mysql
+  # username: root
   database: main-test
