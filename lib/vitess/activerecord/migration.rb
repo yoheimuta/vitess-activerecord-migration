@@ -75,8 +75,6 @@ module Vitess
       end
 
       def enable_vitess?
-        # 問題ないか確認するため、しばらくの間ステージング環境でのみ実行する
-        return false unless Rails.env.staging?
         version = execute("SELECT VERSION()").first.first
         version.include?("Vitess")
       end

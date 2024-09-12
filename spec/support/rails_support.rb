@@ -12,6 +12,7 @@ class RailsSupport
 
   def setup
     run("rails db:schema:load")
+    ActiveRecord::Base.establish_connection(db_config["test"])
 
     # Save the current schema
     FileUtils.cp(@schema_path, @schema_backup_path)
@@ -19,7 +20,9 @@ class RailsSupport
 
   def cleanup
     # Clean up database tables
-    run("rake db:delete_all_tables")
+    ActiveRecord::Base.connection.tables.each do |table|
+      ActiveRecord::Base.connection.execute("DROP TABLE IF EXISTS #{table}")
+    end
 
     # Restore the original schema
     FileUtils.cp(@schema_backup_path, @schema_path)
@@ -31,10 +34,33 @@ class RailsSupport
     end
   end
 
-  def run(command)
+  def run(command, rails_env = "test")
     # Change directory to @rails_root and run the Rails command
     Dir.chdir(@rails_root) do
-      system("bundle exec #{command} RAILS_ENV=test", exception: true)
+      append = rails_env ? " RAILS_ENV=#{rails_env}" : ""
+      system("#{append} bundle exec #{command}", exception: true)
     end
+  end
+
+  def create_test_vitess_users(table_columns = "name:string")
+    table_name = "test_vitess_users"
+    name = "create_#{table_name}"
+
+    # Create a migration file
+    run("rails generate migration #{name.camelize} #{table_columns}")
+
+    # Get the migration file path
+    @migration_files = Dir.glob(File.join(@rails_root, "db", "migrate", "*_#{name}.rb"))
+    migration_context = File.basename(@migration_files.first, ".rb")
+
+    # Run the migration file
+    run("rails db:migrate")
+    [table_name, migration_context]
+  end
+
+  private
+
+  def db_config
+    YAML.load_file(File.join(@rails_root, "config", "database.yml"), aliases: true)
   end
 end

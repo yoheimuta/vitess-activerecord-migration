@@ -10,9 +10,17 @@ class RailsSupport
 
   @schema_path: String
 
-  def run: (String)-> void
+  def create_test_vitess_users: (String)->[String,String]
+
+  def run: (String,String?)-> void
+
+  def run_test_env: (String)->void
 
   def setup: -> void
 
   def cleanup : -> void
+
+  private
+
+  def db_config: ->untyped
 end
