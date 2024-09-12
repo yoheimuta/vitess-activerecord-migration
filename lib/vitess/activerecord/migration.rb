@@ -8,17 +8,18 @@ module Vitess
   module Activerecord
     module Migration
       class Error < StandardError; end
-      # デフォルトの DDL strategy を返す。
-      # このメソッドは、change, up, down メソッドの実行前に呼び出されセットされる。
+
+      # Returns the default DDL strategy.
+      # This method is called and set before executing the change, up, or down methods.
       #
-      # `direct` など別の strategy を使いたい場合は、このメソッドをオーバーライドすること。
+      # If you want to use a different strategy like `direct`, override this method.
       def default_ddl_strategy
         "vitess --prefer-instant-ddl --fast-range-rotation"
       end
 
-      # DDL strategy に vitess をデフォルトで設定するために exec_migration をオーバーライドする。
-      # このメソッドは、migration を実行するたびに呼び出される。
-      # 別の DDL strategy を使いたい場合は、change メソッド内などで with_ddl_strategy を呼び出すこと。
+      # Override exec_migration to set the default DDL strategy to vitess.
+      # This method is called every time a migration is executed.
+      # If you want to use a different DDL strategy, call with_ddl_strategy inside the change method or elsewhere.
       def exec_migration(connection, direction)
         @migration_direction = direction
         @using_change_method = self.respond_to?(:change)
@@ -28,27 +29,27 @@ module Vitess
         end
       end
 
-      # create_table メソッドをオーバーライドする。
-      # vitess strategy を使っている場合、CREATE TABLE 文の実行完了を待つ。
-      # テーブルの作成完了前にそのテーブルに対する DDL を実行しようとして、評価エラーになるのを防ぐため。
+      # Override the create_table method.
+      # If using the Vitess strategy, wait for the completion of the CREATE TABLE statement.
+      # This prevents an evaluation error from occurring if you try to execute a DDL on that table before the creation is complete.
       def create_table(table_name, **options)
         super(table_name, **options)
 
-        # revert で create_table が呼ばれた場合は、追加の処理を行わない。
-        # revert 時には DROP 文が自動で発行されるのを期待するところ、ここで execute が実行されると
-        # IrreversibleMigration エラーが発生してしまうのでそれを防ぐための対応。
+        # If create_table is called during revert, no additional processing is done.
+        # We expect the DROP statement to be issued automatically during revert, but if execute is run here,
+        # it will raise an IrreversibleMigration error, so this is to prevent that.
         return if down_migration_in_change_method?
 
-        # vitess strategy を使っていない場合は、CREATE TABLE 文の実行完了を待たない。
+        # If not using the Vitess strategy, do not wait for the completion of the CREATE TABLE statement.
         return unless vitess_strategy?
 
         wait_for_ddl
       end
 
-      # ブロック内で一時的に DDL strategy を変更する。
+      # Temporarily change the DDL strategy within the block.
       #
-      # このメソッドを change メソッド内などで使うことで、特定の DDL 文の実行中だけ strategy を変更することができる。
-      # ただし、そうすると revert できなくなるので、revert 可能な default_ddl_strategy の上書きで対応できる場合はそちらを使うこと。
+      # You can use this method inside the change method to change the strategy only during the execution of specific DDL statements.
+      # However, note that this makes the migration irreversible, so if it’s possible to handle this by overriding the default_ddl_strategy, use that instead.
       def with_ddl_strategy(strategy)
         if enable_vitess?
           original_ddl_strategy = execute("SELECT @@ddl_strategy").first.first
@@ -66,6 +67,7 @@ module Vitess
       end
 
       private
+
       def vitess_strategy?
         enable_vitess? && execute("SELECT @@ddl_strategy").first.first.include?("vitess")
       end
