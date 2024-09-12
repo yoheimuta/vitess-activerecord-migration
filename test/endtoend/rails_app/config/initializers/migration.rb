@@ -1,1 +1,1 @@
-ActiveRecord::Migration.prepend(Vitess::ActiveRecord::Migration)
+ActiveRecord::Migration.prepend(Vitess::Activerecord::Migration)

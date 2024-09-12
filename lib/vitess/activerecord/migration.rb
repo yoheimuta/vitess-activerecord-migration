@@ -4,7 +4,7 @@ require_relative "migration/version"
 require 'active_record'
 
 module Vitess
-  module ActiveRecord
+  module Activerecord
     module Migration
       class Error < StandardError; end
 

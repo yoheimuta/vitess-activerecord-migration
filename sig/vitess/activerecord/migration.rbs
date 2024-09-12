@@ -1,5 +1,5 @@
 module Vitess
-  module ActiveRecord
+  module Activerecord
     module Migration
       VERSION: String
       # See the writing guide of rbs: https://github.com/ruby/rbs#guides

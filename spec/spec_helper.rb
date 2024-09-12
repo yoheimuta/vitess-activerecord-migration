@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "vitess/active_record/migration"
+require "vitess/activerecord/migration"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

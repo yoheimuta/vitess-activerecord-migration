@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in vitess-active_record-migration.gemspec
+# Specify your gem's dependencies in vitess-activerecord-migration.gemspec
 gemspec
 
 gem "rake", "~> 13.0"
