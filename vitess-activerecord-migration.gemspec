@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative "lib/vitess/activerecord/migration/version"
+require_relative "lib/vitess/active_record/migration/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "vitess-activerecord-migration"
-  spec.version = Vitess::Activerecord::Migration::VERSION
+  spec.name = "vitess-active_record-migration"
+  spec.version = Vitess::ActiveRecord::Migration::VERSION
   spec.authors = ["Yohei Yoshimuta"]
   spec.email = ["yoheimuta@gmail.com"]
 

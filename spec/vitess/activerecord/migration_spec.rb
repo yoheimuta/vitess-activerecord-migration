@@ -2,9 +2,9 @@
 
 require_relative "../../support/rails_support"
 
-RSpec.describe Vitess::Activerecord::Migration do
+RSpec.describe Vitess::ActiveRecord::Migration do
   it "has a version number" do
-    expect(Vitess::Activerecord::Migration::VERSION).not_to be nil
+    expect(Vitess::ActiveRecord::Migration::VERSION).not_to be nil
   end
 
   describe "exec_migration" do
