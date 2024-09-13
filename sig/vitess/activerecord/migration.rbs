@@ -3,6 +3,29 @@ module Vitess
     module Migration
       VERSION: String
       # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+      @migration_context: String
+      @migration_direction: Symbol
+
+      @stopped_uuid: [String]
+      @using_change_method: bool
+
+      def create_table: (String, untyped)->void
+
+      def default_ddl_strategy: -> String
+
+      def exec_migration: (untyped, Symbol)-> void
+
+      def with_ddl_strategy: (String)-> void
+
+      private
+
+      def down_migration_in_change_method?: -> bool
+
+      def enable_vitess?: -> bool
+
+      def vitess_strategy?: -> bool
+
+      def wait_for_ddl: -> void
     end
   end
 end

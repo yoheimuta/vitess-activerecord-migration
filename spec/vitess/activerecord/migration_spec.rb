@@ -28,13 +28,13 @@ RSpec.describe Vitess::Activerecord::Migration do
             # Confirm that the table has been created
             expect(ActiveRecord::Base.connection.tables).to include(table_name)
 
-            # # Confirm that Vitess has executed the migration
-            # migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
-            # expect(migrations.count).to eq(1)
-            # migrations.each do |migration|
-            #   expect(migration["migration_status"]).to eq("complete")
-            #   expect(migration["is_immediate_operation"]).to eq(1)
-            # end
+            # Confirm that Vitess has executed the migration
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+            expect(migrations.count).to eq(1)
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("complete")
+              expect(migration["is_immediate_operation"]).to eq(1)
+            end
 
             # Revert the migration
             rails.run("rails db:rollback")
@@ -42,13 +42,13 @@ RSpec.describe Vitess::Activerecord::Migration do
             # Confirm that the table has been deleted
             expect(ActiveRecord::Base.connection.tables).not_to include(table_name)
 
-            # # Confirm that Vitess has executed the migration
-            # migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
-            # expect(migrations.count).to eq(2)
-            # migrations.each do |migration|
-            #   expect(migration["migration_status"]).to eq("complete")
-            #   expect(migration["is_immediate_operation"]).to eq(1)
-            # end
+            # Confirm that Vitess has executed the migration
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+            expect(migrations.count).to eq(2)
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("complete")
+              expect(migration["is_immediate_operation"]).to eq(1)
+            end
           end
         end
       end
