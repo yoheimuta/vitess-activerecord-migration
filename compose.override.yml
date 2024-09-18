@@ -1,0 +1,12 @@
+services:
+  migration:
+    command: bash -c "bundle install -j4 && tail -f /dev/null"
+  migration-endtoend:
+    ports:
+      # http
+      - "53303:3303"
+      # mysql (vtgate)
+      - "53306:3306"
+  migration-mysql:
+    ports:
+      - "18306:3306"

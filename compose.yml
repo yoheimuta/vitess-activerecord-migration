@@ -1,7 +1,6 @@
 services:
   migration:
     build: .
-    command: bash -c "bundle install -j4 && tail -f /dev/null"
     container_name: migration
     volumes:
       - bundle:/usr/local/bundle
@@ -15,18 +14,11 @@ services:
     volumes:
       - .:/endtoend
       - tmp:/endtoend/tmp
-    ports:
-      # http
-      - "53303:3303"
-      # mysql (vtgate)
-      - "53306:3306"
     networks:
       - migration-default
   migration-mysql:
     image: mysql:8.0
     container_name: migration-mysql
-    ports:
-      - "18306:3306"
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
     networks:
