@@ -2,4 +2,4 @@
 
 source ./test/endtoend/utils.sh
 
-checkKeyspaceServing main-test - 1
+checkKeyspaceServing main-test - 1 || exit 1

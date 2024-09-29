@@ -36,9 +36,9 @@ function checkKeyspaceServing() {
   numtablets=$(echo "$out" | grep -E "$ks(.*)$shard(.*)PRIMARY(.*)SERVING|$ks(.*)$shard(.*)REPLICA(.*)SERVING|$ks(.*)$shard(.*)RDONLY(.*)SERVING" | wc -l)
   if [[ $numtablets -ge $((nb_of_replica+1)) ]]; then
     echo "Shard $ks/$shard is serving"
-    exit 0
+    return 0
   else
     echo "Shard $ks/$shard is not fully serving. Output: $out"
-    exit 1
+    return 1
   fi
 }
