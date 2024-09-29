@@ -37,11 +37,12 @@ while true; do
   fi
 
   kubectl get pods
-  pgrep -fa endtoend
+  pgrep -fa "test/endtoend/pf.sh"
   if nc -z 127.0.0.1 3306; then
     echo "Port-forwarding is working and port 3306 is accessible."
   else
-    echo "Failed to connect to local port 3306."
+    echo "Failed to connect to local port 3306. Restarting port-forwarding."
+    ./test/endtoend/pf.sh &
   fi
   sleep 10
 done
