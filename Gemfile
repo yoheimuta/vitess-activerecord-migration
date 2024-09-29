@@ -13,4 +13,4 @@ gem "rubocop", "~> 1.21"
 
 gem "mysql2", "< 0.6.0"
 
-gem 'rails', '>= 6', '< 8.1'
+gem 'rails', ENV['RAILS_VERSION'] || '~> 7.2.0'

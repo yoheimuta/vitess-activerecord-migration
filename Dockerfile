@@ -4,4 +4,7 @@ FROM ruby:$RUBY_VERSION
 
 WORKDIR /migration
 
+ARG RAILS_VERSION=""
+ENV RAILS_VERSION=$RAILS_VERSION
+
 CMD ["tail", "-f", "/dev/null"]

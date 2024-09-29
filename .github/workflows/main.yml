@@ -34,3 +34,4 @@ jobs:
         exit $exit_code
       env:
         RUBY_VERSION: ${{ matrix.ruby }}
+        RAILS_VERSION: ${{ matrix.rails }}
