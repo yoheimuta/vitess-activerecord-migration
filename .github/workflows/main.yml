@@ -17,13 +17,18 @@ jobs:
           - '3.1'
           - '3.2'
           - '3.3'
+        rails:
+          - "~> 7.2.0"
+          - "~> 7.1.0"
+          - "~> 7.0.0"
+          - "~> 6.1.0"
 
     steps:
     - uses: actions/checkout@v4
     - name: Run the e2e tests
       run: |
         docker compose -f compose.yml -f compose.ci.yml up -d migration-endtoend
-        docker compose -f compose.yml -f compose.ci.yml up migration || exit_code=$?
+        docker compose -f compose.yml -f compose.ci.yml --exit-code-from migration up migration || exit_code=$?
 
         echo "Finished containers. Fetching logs..."
         docker compose -f compose.yml -f compose.ci.yml logs migration-endtoend
