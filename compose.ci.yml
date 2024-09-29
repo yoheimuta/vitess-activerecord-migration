@@ -7,8 +7,8 @@ services:
   migration-endtoend:
     command: bash -c "dockerd-entrypoint.sh & sleep 5 && unset DOCKER_HOST && make migration-test-setup && tail -f /dev/null"
     healthcheck:
-      test: [ "CMD-SHELL", "mysql -h 127.0.0.1 -u user -D main-test -e 'SHOW TABLES;'" ]
+      test: ["CMD", "make", "keyspace-serving-check"]
       interval: 30s
       timeout: 10s
-      retries: 120
+      retries: 10
       start_period: 1m
