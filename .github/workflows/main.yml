@@ -22,6 +22,7 @@ jobs:
       run: |
         docker compose -f compose.yml -f compose.ci.yml up -d migration-endtoend
         docker compose -f compose.yml -f compose.ci.yml up migration || exit_code=$?
+
         echo "Finished containers. Fetching logs..."
         docker compose -f compose.yml -f compose.ci.yml logs migration-endtoend
         exit $exit_code
