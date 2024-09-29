@@ -4,7 +4,7 @@ source ./test/endtoend/utils.sh
 
 # Retry function for 'kind delete cluster'
 retry_kind_delete_cluster() {
-  local retries=30       # Number of retries
+  local retries=10       # Number of retries
   local wait_time=5     # Time to wait between retries (in seconds)
   local attempt=1       # Current attempt counter
 
