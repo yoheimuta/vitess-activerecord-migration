@@ -21,11 +21,9 @@ jobs:
     - name: Run the e2e tests
       run: |
         docker compose -f compose.yml -f compose.ci.yml up -d migration-endtoend
-        docker compose -f compose.yml -f compose.ci.yml up migration || exit_code=$
-        if [ ! -z "$exit_code" ]; then
-          echo "Error starting containers. Fetching logs..."
-          docker compose -f compose.yml -f compose.ci.yml logs migration-endtoend
-          exit $exit_code
-        fi
+        docker compose -f compose.yml -f compose.ci.yml up migration || exit_code=$?
+        echo "Finished containers. Fetching logs..."
+        docker compose -f compose.yml -f compose.ci.yml logs migration-endtoend
+        exit $exit_code
       env:
         RUBY_VERSION: ${{ matrix.ruby }}

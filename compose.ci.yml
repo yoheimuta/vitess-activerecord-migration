@@ -1,6 +1,6 @@
 services:
   migration:
-    command: bash -c "bin/setup && rake spec"
+    command: bash -c "bin/setup && git config --global --add safe.directory /migration && rake spec"
     depends_on:
       migration-endtoend:
         condition: service_healthy
