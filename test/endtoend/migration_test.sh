@@ -26,7 +26,7 @@ kubectl apply -f "test/endtoend/k8s/setup-replication-job.yaml"
 check_pod_status_with_timeout "example-vttablet-zone1(.*)1/1(.*)Running(.*)" 2
 
 echo "Start port-forwarding"
-./test/endtoend/pf.sh > /dev/null 2>&1 &
+./test/endtoend/pf.sh &
 sleep 5
 
 echo "Complete setup"
@@ -35,7 +35,14 @@ while true; do
   if checkKeyspaceServing main-test - 1; then
     break
   fi
+
   kubectl get pods
+  pgrep -fa endtoend
+  if nc -z 127.0.0.1 3306; then
+    echo "Port-forwarding is working and port 3306 is accessible."
+  else
+    echo "Failed to connect to local port 3306."
+  fi
   sleep 10
 done
 
