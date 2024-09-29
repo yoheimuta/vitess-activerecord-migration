@@ -23,4 +23,8 @@ class RailsSupport
   private
 
   def db_config: ->untyped
+
+  def copy_template_file: (*String)-> void
+
+  def rails_new: -> void
 end

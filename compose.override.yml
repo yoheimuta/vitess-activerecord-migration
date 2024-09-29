@@ -1,6 +1,6 @@
 services:
   migration:
-    command: bash -c "bundle install -j4 && tail -f /dev/null"
+    command: bash -c "bin/setup && tail -f /dev/null"
   migration-endtoend:
     ports:
       # http

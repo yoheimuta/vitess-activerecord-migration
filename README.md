@@ -21,9 +21,25 @@ ActiveRecord::Migration.prepend(Vitess::Activerecord::Migration)
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies.
-Then, run `rake spec` to run the tests.
-You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+After checking out the repo, run the following command to start related containers.
+
+```bash
+$ docker compose up
+```
+
+Then, you can run the following command to create a vitess cluster.
+
+```bash
+$ docker exec -it migration-endtoend /bin/bash
+323e040cee42:/endtoend# make migration-test-setup
+```
+
+Finally, you can run the test suite to verify that the gem works correctly.
+
+```bash
+$ docker exec -it migration /bin/bash
+root@0401705ea521:/migration# rake spec
+```
 
 To install this gem onto your local machine, run `bundle exec rake install`.
 To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`,

@@ -4,7 +4,9 @@ require "fileutils"
 
 class RailsSupport
   def initialize
-    @rails_root = File.join(File.expand_path("../../", __dir__), "test", "endtoend", "rails_app")
+    @rails_root = File.join(File.expand_path("../../", __dir__), "tmp", "endtoend", "rails_app")
+    rails_new
+
     @schema_backup_path = "#{@rails_root}/db/schema_backup.rb"
     @schema_path = "#{@rails_root}/db/schema.rb"
     @migration_files = []
@@ -59,6 +61,25 @@ class RailsSupport
   end
 
   private
+
+  def rails_new
+    FileUtils.rm_r(@rails_root, force: true)
+    system("bundle exec rails new #{@rails_root} --minimal --skip-bundle --skip-test --skip-git --skip-spring --skip-listen --skip-docker --skip-asset-pipeline", exception: true)
+
+    copy_template_file("Gemfile")
+    copy_template_file("config", "database.yml")
+    copy_template_file("config", "initializers", "migration.rb")
+
+    Dir.chdir(@rails_root) do
+      system("bundle install", exception: true)
+    end
+    run("rails db:migrate")
+  end
+
+  def copy_template_file(*args)
+    template_path = File.join(File.expand_path("../../", __dir__), "test", "endtoend", "rails_app_template")
+    FileUtils.cp(File.join(template_path, *args), File.join(@rails_root, *args))
+  end
 
   def db_config
     YAML.load_file(File.join(@rails_root, "config", "database.yml"), aliases: true)
