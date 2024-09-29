@@ -8,17 +8,17 @@ Gem::Specification.new do |spec|
   spec.authors = ["Yohei Yoshimuta"]
   spec.email = ["yoheimuta@gmail.com"]
 
-  spec.summary = "TOD: Write a short summary, because RubyGems requires one."
-  spec.description = "TOD: Write a longer description or delete this line."
-  spec.homepage = "https://example.com"
+  spec.summary = "A gem for integrating Vitess with ActiveRecord migrations."
+  spec.description = "Vitess::Activerecord::Migration provides tools to integrate Vitess with ActiveRecord migrations, allowing for seamless database schema changes in a Vitess environment."
+  spec.homepage = "https://github.com/yoheimuta/vitess-activerecord-migration"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.6.0"
 
-  spec.metadata["allowed_push_host"] = "TOD: Set to your gem server 'https://example.com'"
+  spec.metadata["allowed_push_host"] = "https://rubygems.org"
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://example.com"
-  spec.metadata["changelog_uri"] = "https://example.com"
+  spec.metadata["source_code_uri"] = "https://github.com/yoheimuta/vitess-activerecord-migration"
+  spec.metadata["changelog_uri"] = "https://github.com/yoheimuta/vitess-activerecord-migration/blob/main/CHANGELOG.md"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
