@@ -18,6 +18,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Debug Environment Variables
+      run: echo $RUBY_VERSION
+      env:
+        RUBY_VERSION: ${{ matrix.ruby }}
     - name: Run the e2e tests
       run: docker compose -f compose.yml -f compose.ci.yml up
       env:
