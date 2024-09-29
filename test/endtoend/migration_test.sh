@@ -26,6 +26,7 @@ retry_kind_delete_cluster() {
 
 # Test setup
 echo "Creating Kind cluster"
+echo "DOCKER_HOST=${DOCKER_HOST}"
 kind get clusters
 retry_kind_delete_cluster || exit 1  # Exit if the retry function fails
 kind create cluster --wait 30s --name kind-migration
