@@ -1,4 +1,5 @@
-FROM ruby:$RUBY_VERSION
+# FROM ruby:$RUBY_VERSION
+FROM ruby:3.2
 
 WORKDIR /migration
 
