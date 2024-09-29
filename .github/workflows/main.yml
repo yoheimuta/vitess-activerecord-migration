@@ -21,7 +21,9 @@ jobs:
     - name: Run the e2e tests
       run: |
         docker compose -f compose.yml -f compose.ci.yml up -d migration-endtoend
-        docker compose -f compose.yml -f compose.ci.yml up -d migration
-        docker compose -f compose.yml -f compose.ci.yml logs -f migration-endtoend migration
+        docker compose -f compose.yml -f compose.ci.yml up migration
       env:
         RUBY_VERSION: ${{ matrix.ruby }}
+    - name: Fetch migration-endtoend logs
+      run: |
+        docker compose -f compose.yml -f compose.ci.yml logs migration-endtoend

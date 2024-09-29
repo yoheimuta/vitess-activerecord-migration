@@ -2,19 +2,19 @@
 
 source ./test/endtoend/utils.sh
 
-# Retry function for 'kind get clusters'
-retry_kind_get_clusters() {
+# Retry function for 'kind delete cluster'
+retry_kind_delete_cluster() {
   local retries=30       # Number of retries
   local wait_time=5     # Time to wait between retries (in seconds)
   local attempt=1       # Current attempt counter
 
   while [ $attempt -le $retries ]; do
     echo "Attempt $attempt: Checking for existing Kind clusters..."
-    if kind get clusters; then
-      echo "Kind clusters found."
+    if kind delete cluster --name kind-migration; then
+      echo "Kind cluster deleted."
       return 0
     else
-      echo "No clusters found or error occurred. Retrying in $wait_time seconds..."
+      echo "Error occurred. Retrying in $wait_time seconds..."
       ((attempt++))
       sleep $wait_time
     fi
@@ -26,8 +26,8 @@ retry_kind_get_clusters() {
 
 # Test setup
 echo "Creating Kind cluster"
-retry_kind_get_clusters || exit 1  # Exit if the retry function fails
-kind delete cluster --name kind-migration
+kind get clusters
+retry_kind_delete_cluster || exit 1  # Exit if the retry function fails
 kind create cluster --wait 30s --name kind-migration
 kind export kubeconfig --name kind-migration
 
