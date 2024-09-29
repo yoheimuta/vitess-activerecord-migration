@@ -19,6 +19,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Run the e2e tests
-      run: docker compose -f compose.yml -f compose.ci.yml up
+      run: |
+        docker compose -f compose.yml -f compose.ci.yml up -d migration-endtoend
+        docker compose -f compose.yml -f compose.ci.yml up migration
       env:
         RUBY_VERSION: ${{ matrix.ruby }}
