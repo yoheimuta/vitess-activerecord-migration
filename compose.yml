@@ -1,6 +1,9 @@
 services:
   migration:
-    build: .
+    build:
+      context: .
+      args:
+        RUBY_VERSION: ${RUBY_VERSION}
     container_name: migration
     volumes:
       - bundle:/usr/local/bundle

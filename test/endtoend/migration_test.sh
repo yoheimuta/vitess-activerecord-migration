@@ -4,6 +4,8 @@ source ./test/endtoend/utils.sh
 
 # Test setup
 echo "Creating Kind cluster"
+kind get clusters
+kind delete cluster --name kind-migration
 kind create cluster --wait 30s --name kind-migration
 kind export kubeconfig --name kind-migration
 
@@ -23,8 +25,11 @@ echo "Apply setup-replication-job.yaml"
 kubectl apply -f "test/endtoend/k8s/setup-replication-job.yaml"
 check_pod_status_with_timeout "example-vttablet-zone1(.*)1/1(.*)Running(.*)" 2
 
+echo "Start port-forwarding"
 ./test/endtoend/pf.sh > /dev/null 2>&1 &
 sleep 5
+
+echo "Complete setup"
 
 # Teardown
 # echo "Deleting Kind cluster."
