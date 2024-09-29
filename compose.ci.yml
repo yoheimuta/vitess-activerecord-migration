@@ -10,5 +10,5 @@ services:
       test: ["CMD", "make", "keyspace-serving-check"]
       interval: 30s
       timeout: 10s
-      retries: 10
+      retries: 20
       start_period: 1m

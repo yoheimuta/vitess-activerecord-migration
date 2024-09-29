@@ -32,6 +32,7 @@ jobs:
 
         echo "Finished containers. Fetching logs..."
         docker compose -f compose.yml -f compose.ci.yml logs migration-endtoend
+        docker inspect --format "{{json .State.Health }}" migration-endtoend
         exit $exit_code
       env:
         RUBY_VERSION: ${{ matrix.ruby }}
