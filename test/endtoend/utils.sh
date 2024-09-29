@@ -22,3 +22,23 @@ function check_pod_status_with_timeout() {
   echo -e "ERROR: Timeout while waiting for pod matching:\n$out\nRegex: $regex"
   exit 1
 }
+
+# Function to check if a keyspace is serving
+# Arguments:
+#   $1 - keyspace name
+#   $2 - shard name
+#   $3 - number of replicas
+function checkKeyspaceServing() {
+  ks=$1
+  shard=$2
+  nb_of_replica=$3
+  out=$(mysql -h 127.0.0.1 -u user --table --execute="show vitess_tablets")
+  numtablets=$(echo "$out" | grep -E "$ks(.*)$shard(.*)PRIMARY(.*)SERVING|$ks(.*)$shard(.*)REPLICA(.*)SERVING|$ks(.*)$shard(.*)RDONLY(.*)SERVING" | wc -l)
+  if [[ $numtablets -ge $((nb_of_replica+1)) ]]; then
+    echo "Shard $ks/$shard is serving"
+    exit 0
+  else
+    echo "Shard $ks/$shard is not fully serving. Output: $out"
+    exit 1
+  fi
+}

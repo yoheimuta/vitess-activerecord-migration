@@ -31,6 +31,14 @@ sleep 5
 
 echo "Complete setup"
 
+while true; do
+  if checkKeyspaceServing main-test - 1; then
+    break
+  fi
+  kubectl get pods
+  sleep 10
+done
+
 # Teardown
 # echo "Deleting Kind cluster."
 # kind delete cluster --name kind-migration
