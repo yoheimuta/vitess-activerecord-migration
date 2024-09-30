@@ -47,7 +47,7 @@ function checkKeyspaceServing() {
 # Function to output logs for unhealthy pods
 function outputFailedPodLogs() {
   # Get all pods with Running state but not fully ready (e.g., 0/1 containers ready)
-  unhealthy_pods=$(kubectl get pods | awk '$2 ~ /0\/1/&& $3 == "Running"')
+  unhealthy_pods=$(kubectl get pods | awk '$2 ~ /0\/1/&& ($3 == "Running" || $3 == "Completed"')
 
   if [ -z "$unhealthy_pods" ]; then
     echo "No unhealthy pods found."
