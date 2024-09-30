@@ -12,7 +12,10 @@ services:
     networks:
       - migration-default
   migration-endtoend:
-    build: ./test/endtoend
+    build:
+      context: ./test/endtoend
+      args:
+        VITESS_VERSION: ${VITESS_VERSION}
     container_name: migration-endtoend
     privileged: true
     volumes:
