@@ -20,6 +20,7 @@ function check_pod_status_with_timeout() {
 
   # Timeout error handling
   echo -e "ERROR: Timeout while waiting for pod matching:\n$out\nRegex: $regex"
+  outputFailedPodLogs
   exit 1
 }
 
@@ -42,3 +43,29 @@ function checkKeyspaceServing() {
     return 1
   fi
 }
+
+# Function to output logs for unhealthy pods
+function outputFailedPodLogs() {
+  # Get all pods with Running state but not fully ready (e.g., 0/1 containers ready)
+  unhealthy_pods=$(kubectl get pods | awk '$2 ~ /0\/1/&& $3 == "Running"')
+
+  if [ -z "$unhealthy_pods" ]; then
+    echo "No unhealthy pods found."
+  else
+    echo "Unhealthy pods:"
+    echo "$unhealthy_pods"
+
+    # Stream logs for each unhealthy pod
+    while IFS= read -r pod; do
+      pod_name=$(echo "$pod" | awk '{print $1}')
+      echo "Fetching logs for pod: $pod_name"
+
+      # Check if the pod has multiple containers
+      containers=$(kubectl get pod "$pod_name" -o jsonpath='{.spec.containers[*].name}')
+      for container in $containers; do
+        echo "Fetching logs for container: $container in pod: $pod_name"
+        kubectl logs "$pod_name" -c "$container"
+      done
+    done <<< "$unhealthy_pods"
+  fi
+  }
