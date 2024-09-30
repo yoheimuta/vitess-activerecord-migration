@@ -17,7 +17,7 @@ check_pod_status_with_timeout "vitess-operator(.*)1/1(.*)Running(.*)"
 echo "Apply cluster.yaml"
 kubectl apply -f "test/endtoend/k8s/cluster.yaml"
 check_pod_status_with_timeout "example-zone1-vtctld(.*)1/1(.*)Running(.*)"
-check_pod_status_with_timeout "example-zone1-vtgate(.*)1/1(.*)Running(.*)" 2
+check_pod_status_with_timeout "example-zone1-vtgate(.*)1/1(.*)Running(.*)"
 check_pod_status_with_timeout "example-etcd(.*)1/1(.*)Running(.*)" 3
 check_pod_status_with_timeout "mysql(.*)1/1(.*)Running(.*)" 2
 
