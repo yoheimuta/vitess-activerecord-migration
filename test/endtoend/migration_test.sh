@@ -32,17 +32,15 @@ sleep 5
 echo "Complete setup"
 
 while true; do
-  if checkKeyspaceServing main-test - 1; then
-    break
-  fi
-
-  kubectl get pods
-  pgrep -fa "test/endtoend/pf.sh"
-  if nc -z 127.0.0.1 3306; then
-    echo "Port-forwarding is working and port 3306 is accessible."
-  else
-    echo "Failed to connect to local port 3306. Restarting port-forwarding."
-    ./test/endtoend/pf.sh &
+  if ! checkKeyspaceServing main-test - 1; then
+    kubectl get pods
+    pgrep -fa "test/endtoend/pf.sh"
+    if nc -z 127.0.0.1 3306; then
+      echo "Port-forwarding is working and port 3306 is accessible."
+    else
+      echo "Failed to connect to local port 3306. Restarting port-forwarding."
+      ./test/endtoend/pf.sh &
+    fi
   fi
   sleep 10
 done

@@ -5,7 +5,7 @@ services:
       migration-endtoend:
         condition: service_healthy
   migration-endtoend:
-    command: bash -c "dockerd-entrypoint.sh & sleep 5 && unset DOCKER_HOST && make migration-test-setup && tail -f /dev/null"
+    command: bash -c "dockerd-entrypoint.sh & sleep 5 && unset DOCKER_HOST && make migration-test-setup"
     healthcheck:
       test: ["CMD", "make", "keyspace-serving-check"]
       interval: 10s
