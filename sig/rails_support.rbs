@@ -10,6 +10,8 @@ class RailsSupport
 
   @schema_path: String
 
+  def self.copy_template_file: (*String)-> void
+
   def self.setup: -> void
 
   def create_test_vitess_users: (String)->[String,String]
@@ -25,8 +27,6 @@ class RailsSupport
   private
 
   def db_config: ->untyped
-
-  def copy_template_file: (*String)-> void
 
   def rails_new: -> void
 end

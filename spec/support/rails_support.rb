@@ -18,6 +18,7 @@ class RailsSupport
     copy_template_file("Gemfile")
     copy_template_file("config", "database.yml")
     copy_template_file("config", "initializers", "migration.rb")
+    # copy_template_file("lib", "vitess")
 
     Dir.chdir(@rails_root) do
       system("bundle install", exception: true)
@@ -77,7 +78,7 @@ class RailsSupport
 
   def self.copy_template_file(*args)
     template_path = File.join(File.expand_path("../../", __dir__), "test", "endtoend", "rails_app_template")
-    FileUtils.cp(File.join(template_path, *args), File.join(@rails_root, *args))
+    FileUtils.cp_r(File.join(template_path, *args), File.join(@rails_root, *args))
   end
 
   def db_config

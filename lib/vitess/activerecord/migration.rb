@@ -13,7 +13,7 @@ module Vitess
       #
       # If you want to use a different strategy like `direct`, override this method.
       def default_ddl_strategy
-        "vitess --prefer-instant-ddl --fast-range-rotation"
+        "vitess --fast-range-rotation"
       end
 
       # Override exec_migration to set the default DDL strategy to vitess.
