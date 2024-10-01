@@ -58,16 +58,22 @@ class RailsSupport
     end
   end
 
-  def create_test_vitess_users(table_columns = "name:string")
+  def create_test_vitess_users(content = "")
     table_name = "test_vitess_users"
     name = "create_#{table_name}"
 
     # Create a migration file
-    run("rails generate migration #{name.camelize} #{table_columns}")
+    run("rails generate migration #{name.camelize} name:string")
 
     # Get the migration file path
     @migration_files = Dir.glob(File.join(@rails_root, "db", "migrate", "*_#{name}.rb"))
-    migration_context = File.basename(@migration_files.first, ".rb")
+    migration_file = @migration_files.first
+    migration_context = File.basename(migration_file, ".rb")
+
+    # Write the migration content to the migration file
+    if content.present?
+      File.write(migration_file, content)
+    end
 
     # Run the migration file
     run("rails db:migrate")
