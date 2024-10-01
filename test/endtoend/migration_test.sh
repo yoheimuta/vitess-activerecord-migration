@@ -46,5 +46,5 @@ while true; do
       ./test/endtoend/pf.sh &
     fi
   fi
-  sleep 10
+  sleep 1
 done
