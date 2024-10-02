@@ -56,7 +56,6 @@ RSpec.describe Vitess::Activerecord::Migration do
           it "db:migrate and db:rollback:primary" do
             # Run the migration
             migration_content = <<-MIGRATION
-    class CreateTestVitessUsers < ActiveRecord::Migration[7.1]
       def change
         create_table :test_vitess_users do |t|
           t.string :name
@@ -65,7 +64,6 @@ RSpec.describe Vitess::Activerecord::Migration do
 
         add_column :test_vitess_users, :token, :string
       end
-    end
             MIGRATION
             table_name, migration_context = rails.create_test_vitess_users(migration_content)
 

@@ -72,7 +72,8 @@ class RailsSupport
 
     # Write the migration content to the migration file
     if content.present?
-      File.write(migration_file, content)
+      updated_content = File.read(migration_file).gsub(/def change.*?end.*?end/m, content)
+      File.write(migration_file, updated_content)
     end
 
     # Run the migration file
