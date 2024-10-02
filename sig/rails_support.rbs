@@ -16,6 +16,8 @@ class RailsSupport
 
   def create_test_vitess_users: (String)->[String,String]
 
+  def generate_migration: -> String
+
   def run: (String,String?)-> void
 
   def run_test_env: (String)->void

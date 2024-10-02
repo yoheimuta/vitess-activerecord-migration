@@ -58,12 +58,17 @@ class RailsSupport
     end
   end
 
-  def create_test_vitess_users(content = "")
+  def create_test_vitess_users(content = "", skip_migration: false)
     table_name = "test_vitess_users"
     name = "create_#{table_name}"
 
+    migration_context = generate_migration(name, "name:string", content: content, skip_migration: skip_migration)
+    [table_name, migration_context]
+  end
+
+  def generate_migration(name, field = "", content: "", skip_migration: false)
     # Create a migration file
-    run("rails generate migration #{name.camelize} name:string")
+    run("rails generate migration #{name.camelize} #{field}")
 
     # Get the migration file path
     @migration_files = Dir.glob(File.join(@rails_root, "db", "migrate", "*_#{name}.rb"))
@@ -72,13 +77,15 @@ class RailsSupport
 
     # Write the migration content to the migration file
     if content.present?
-      updated_content = File.read(migration_file).gsub(/def change.*?end.*?end/m, content)
+      original_content = File.read(migration_file)
+      sub = original_content.scan("end").size == 3 ? "def change.*?end.*?end" : "def change.*?end"
+      updated_content = original_content.gsub(/#{sub}/m, content)
       File.write(migration_file, updated_content)
     end
 
     # Run the migration file
-    run("rails db:migrate")
-    [table_name, migration_context]
+    run("rails db:migrate") unless skip_migration
+    migration_context
   end
 
   private
