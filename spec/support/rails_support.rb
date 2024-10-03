@@ -11,7 +11,11 @@ class RailsSupport
   end
 
   def self.setup
-    @rails_root = File.join(File.expand_path("../../", __dir__), "tmp", "endtoend", "rails_app")
+    rails = new
+    rails.create_rails_app
+  end
+
+  def create_rails_app
     FileUtils.rm_r(@rails_root, force: true)
     system("bundle exec rails new #{@rails_root} --minimal --skip-bundle --skip-test --skip-git --skip-spring --skip-listen --skip-docker --skip-asset-pipeline", exception: true)
 
@@ -89,9 +93,21 @@ class RailsSupport
     migration_context
   end
 
+  def start_custom_module
+    copy_template_file("lib", "vitess")
+    copy_template_file("config", "initializers", "app_migration.rb")
+    FileUtils.rm(File.join(@rails_root, "config", "initializers", "migration.rb"))
+  end
+
+  def end_custom_module
+    FileUtils.rm_r(File.join(@rails_root, "lib", "vitess"))
+    FileUtils.rm(File.join(@rails_root, "config", "initializers", "app_migration.rb"))
+    copy_template_file("config", "initializers", "migration.rb")
+  end
+
   private
 
-  def self.copy_template_file(*args)
+  def copy_template_file(*args)
     template_path = File.join(File.expand_path("../../", __dir__), "test", "endtoend", "rails_app_template")
     FileUtils.cp_r(File.join(template_path, *args), File.join(@rails_root, *args))
   end

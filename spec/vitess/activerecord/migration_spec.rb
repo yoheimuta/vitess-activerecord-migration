@@ -428,5 +428,65 @@ RSpec.describe Vitess::Activerecord::Migration do
         end
       end
     end
+
+    describe "override module method" do
+      context "when default_ddl_strategy set --prefer-instant-ddl" do
+        before do
+          rails.start_custom_module
+        end
+
+        after do
+          rails.end_custom_module
+        end
+
+        context "when creating a table and then adding a column" do
+          it "db:migrate and db:rollback:primary" do
+            # Run the migration
+            migration_content = <<-MIGRATION
+      def change
+        create_table :test_vitess_users do |t|
+          t.string :name
+          t.timestamps
+        end
+
+        add_column :test_vitess_users, :token, :string
+      end
+            MIGRATION
+            table_name, migration_context = rails.create_test_vitess_users(migration_content)
+
+            # Confirm that the table has been created
+            expect(ActiveRecord::Base.connection.tables).to include(table_name)
+
+            # Confirm that the `token` column has been added
+            columns = ActiveRecord::Base.connection.columns(table_name).map(&:name)
+            expect(columns).to include("token")
+
+            # Confirm that Vitess has executed the migration
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+            expect(migrations.count).to eq(2)
+            ## With --prefer-instant-ddl, add_column has been executed as instant operation.
+            expect(migrations.map { |m| m["is_immediate_operation"].to_i }).to eq([1, 1])
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("complete")
+            end
+
+            # Revert the migration
+            rails.run("rails db:rollback")
+
+            # Confirm that the table has been deleted
+            expect(ActiveRecord::Base.connection.tables).not_to include(table_name)
+
+            # Confirm that Vitess has executed the migration
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+            expect(migrations.count).to eq(4)
+            ## With --prefer-instant-ddl, remove_column has been executed as instant operation.
+            expect(migrations.map { |m| m["is_immediate_operation"].to_i }).to eq([1, 1, 1, 1])
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("complete")
+            end
+          end
+        end
+      end
+    end
   end
 end
