@@ -215,5 +215,55 @@ RSpec.describe Vitess::Activerecord::Migration do
         end
       end
     end
+
+    describe "default_ddl_strategy" do
+      context "when setting it to direct" do
+        it "db:migrate and db:rollback:primary" do
+          # Run the migration
+          migration_content = <<-MIGRATION
+      def default_ddl_strategy
+        "direct"
+      end
+      def change
+        create_table :test_vitess_users do |t|
+          t.string :name
+          t.timestamps
+        end
+
+        add_column :test_vitess_users, :token, :string
+        add_index :test_vitess_users, :name, unique: true
+      end
+          MIGRATION
+          table_name, migration_context = rails.create_test_vitess_users(migration_content)
+
+          # Confirm that the table has been created
+          expect(ActiveRecord::Base.connection.tables).to include(table_name)
+
+          # Confirm that the `token` column has been added
+          columns = ActiveRecord::Base.connection.columns(table_name).map(&:name)
+          expect(columns).to include("token")
+
+          # Confirm that the unique index for `name` column has been added
+          indexes = ActiveRecord::Base.connection.indexes(table_name)
+          name_index = indexes.find { |index| index.columns == ["name"] }
+          expect(name_index).not_to be_nil
+          expect(name_index.unique).to be true
+
+          # Confirm that Vitess has not executed the migration
+          migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+          expect(migrations.count).to eq(0)
+
+          # Revert the migration
+          rails.run("rails db:rollback")
+
+          # Confirm that the table has been deleted
+          expect(ActiveRecord::Base.connection.tables).not_to include(table_name)
+
+          # Confirm that Vitess has not executed the migration
+          migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+          expect(migrations.count).to eq(0)
+        end
+      end
+    end
   end
 end
