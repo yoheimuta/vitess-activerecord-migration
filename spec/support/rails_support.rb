@@ -59,6 +59,9 @@ class RailsSupport
   end
 
   def create_test_vitess_users(content = "", skip_migration: false)
+    # Wait for a second to avoid the same timestamp
+    sleep 1
+
     table_name = "test_vitess_users"
     name = "create_#{table_name}"
 
