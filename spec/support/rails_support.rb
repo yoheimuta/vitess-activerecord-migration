@@ -59,9 +59,6 @@ class RailsSupport
   end
 
   def create_test_vitess_users(content = "", skip_migration: false)
-    # Wait for a second to avoid the same timestamp
-    sleep 1
-
     table_name = "test_vitess_users"
     name = "create_#{table_name}"
 
@@ -74,8 +71,9 @@ class RailsSupport
     run("rails generate migration #{name.camelize} #{field}")
 
     # Get the migration file path
-    @migration_files = Dir.glob(File.join(@rails_root, "db", "migrate", "*_#{name}.rb"))
-    migration_file = @migration_files.first
+    migration_files = Dir.glob(File.join(@rails_root, "db", "migrate", "*_#{name}.rb"))
+    migration_file = migration_files.first
+    @migration_files << migration_file
     migration_context = File.basename(migration_file, ".rb")
 
     # Write the migration content to the migration file
