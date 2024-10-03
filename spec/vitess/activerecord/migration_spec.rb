@@ -361,5 +361,72 @@ RSpec.describe Vitess::Activerecord::Migration do
         end
       end
     end
+
+    describe "up and down" do
+      context "when using a migration file" do
+        context "when creating a table and altering partition by range" do
+          it "db:migrate and db:rollback:primary" do
+            # Run the migration
+            migration_content = <<-MIGRATION
+      def up
+        create_table :test_vitess_users do |t|
+          t.date :date
+          t.timestamps
+        end
+
+        execute "ALTER TABLE test_vitess_users DROP PRIMARY KEY, ADD PRIMARY KEY (id, date)"
+        execute "ALTER TABLE test_vitess_users PARTITION BY RANGE (TO_DAYS(date)) (PARTITION pmax VALUES LESS THAN MAXVALUE)"
+      end
+
+      def down
+        execute "ALTER TABLE test_vitess_users REMOVE PARTITIONING"
+        execute "ALTER TABLE test_vitess_users DROP PRIMARY KEY, ADD PRIMARY KEY (id)"
+        drop_table :test_vitess_users
+      end
+            MIGRATION
+            table_name, migration_context = rails.create_test_vitess_users(migration_content)
+
+            # Confirm that the table has been created
+            expect(ActiveRecord::Base.connection.tables).to include(table_name)
+
+            # Confirm that the primary key is `id`, `date`
+            pk_columns = ActiveRecord::Base.connection.primary_key(table_name)
+            expect(pk_columns).to eq(%w[id date])
+
+            # Confirm that the table has been partitioned
+            partition_info = ActiveRecord::Base.connection.select_all(<<-SQL).to_a
+      SELECT PARTITION_NAME, PARTITION_EXPRESSION
+      FROM information_schema.PARTITIONS
+      WHERE TABLE_NAME = '#{table_name}'
+            SQL
+            expect(partition_info).not_to be_empty
+            expect(partition_info.any? { |p| p["PARTITION_EXPRESSION"] == "to_days(`date`)" }).to be true
+            expect(partition_info.any? { |p| p["PARTITION_NAME"] == "pmax" }).to be true
+
+            # Confirm that Vitess has executed the migration
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+            expect(migrations.count).to eq(3)
+            expect(migrations.map { |m| m["is_immediate_operation"].to_i }).to eq([1, 0, 0])
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("complete")
+            end
+
+            # Revert the migration
+            rails.run("rails db:rollback")
+
+            # Confirm that the table has been deleted
+            expect(ActiveRecord::Base.connection.tables).not_to include(table_name)
+
+            # Confirm that Vitess has executed the migration
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+            expect(migrations.count).to eq(6)
+            expect(migrations.map { |m| m["is_immediate_operation"].to_i }).to eq([1, 0, 0, 0, 0, 1])
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("complete")
+            end
+          end
+        end
+      end
+    end
   end
 end
