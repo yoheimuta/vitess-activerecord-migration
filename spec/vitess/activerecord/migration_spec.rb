@@ -311,6 +311,55 @@ RSpec.describe Vitess::Activerecord::Migration do
           expect(migrations.count).to eq(2)
         end
       end
+
+      context "when setting it to vitess" do
+        it "db:migrate and db:rollback:primary" do
+          # Run the migration
+          migration_content = <<-MIGRATION
+      def change
+        create_table :test_vitess_users do |t|
+          t.string :name
+          t.timestamps
+        end
+
+        # A subsequent index deletion depends on the index addition here.
+        # This dependency results in an error due to the nature of Vitess async mechanism.
+        # So you should enclose with with_ddl_strategy to execute it sequentially.
+        with_ddl_strategy(default_ddl_strategy) do
+          add_column :test_vitess_users, :token, :string
+        end
+        change_column :test_vitess_users, :token, :integer, null: false
+      end
+          MIGRATION
+          table_name, migration_context = rails.create_test_vitess_users(migration_content)
+
+          # Confirm that the table has been created
+          expect(ActiveRecord::Base.connection.tables).to include(table_name)
+
+          # Confirm that the `token` column has been added as an integer type
+          token_column = ActiveRecord::Base.connection.columns("test_vitess_users").find { |c| c.name == "token" }
+          expect(token_column).not_to be_nil
+          expect(token_column.type).to eq(:integer)
+
+          # Confirm that Vitess has executed the migration
+          migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+          expect(migrations.count).to eq(3)
+          expect(migrations.map { |m| m["is_immediate_operation"].to_i }).to eq([1, 0, 0])
+          migrations.each do |migration|
+            expect(migration["migration_status"]).to eq("complete")
+          end
+
+          # Confirm that rollback is not possible because with_ddl_strategy calls execute().
+          expect { rails.run("rails db:rollback") }.to raise_error RuntimeError
+
+          # Confirm that the table has not been deleted
+          expect(ActiveRecord::Base.connection.tables).to include(table_name)
+
+          # Confirm that Vitess has not executed the migration
+          migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+          expect(migrations.count).to eq(3)
+        end
+      end
     end
   end
 end
