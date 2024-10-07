@@ -13,6 +13,8 @@ module Vitess
 
       def default_ddl_strategy: -> String
 
+      def wait_timeout_seconds: -> Integer
+
       def exec_migration: (untyped, Symbol)-> void
 
       def with_ddl_strategy: (String)-> void

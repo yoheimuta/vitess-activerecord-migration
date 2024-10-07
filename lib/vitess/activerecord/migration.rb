@@ -13,7 +13,15 @@ module Vitess
       #
       # If you want to use a different strategy like `direct`, override this method.
       def default_ddl_strategy
-        "vitess --fast-range-rotation"
+        "vitess"
+      end
+
+      # Returns the timeout seconds for waiting for the completion of the DDL statement.
+      # Even after the timeout, the migration on Vitess will not be stopped, but a warning will be logged.
+      #
+      # Override this method if you want to change the default timeout.
+      def wait_timeout_seconds
+        7200 # 120 minutes
       end
 
       # Override exec_migration to set the default DDL strategy to vitess.
@@ -82,7 +90,7 @@ module Vitess
 
       def wait_for_ddl
         start_time = Time.now
-        timeout_seconds = 300  # 5 minutes
+        timeout_seconds = wait_timeout_seconds
         interval_seconds = 2
         max_interval_seconds = 30
 

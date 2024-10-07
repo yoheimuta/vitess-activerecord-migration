@@ -13,11 +13,50 @@ gem 'vitess-activerecord-migration'
 
 ## Usage
 
-Add a file including the following line under config/initializers.
+Create a config file under config/initializers.
 
 ```ruby
+# config/initializers/vitess_activerecord_migration.rb
 ActiveRecord::Migration.prepend(Vitess::Activerecord::Migration)
 ```
+
+The default ddl strategy is `vitess` with no options.
+
+When you want to set the ddl strategy and its options for one shot, you can set them in the migration file.
+
+```ruby
+def default_ddl_strategy
+  "direct"
+end
+def change
+  create_table :test_vitess_users do |t|
+    t.string :name
+  end
+end
+```
+
+When you want to set the default ddl strategy and its options, you can override the following methods.
+
+```ruby
+# lib/vitess/activerecord/app_migration.rb
+module Vitess
+  module Activerecord
+    module AppMigration
+      def default_ddl_strategy
+        "vitess --prefer-instant-ddl"
+      end
+    end
+  end
+end
+```
+
+```ruby
+# config/initializers/vitess_activerecord_migration.rb
+require 'vitess/activerecord/app_migration'
+ActiveRecord::Migration.prepend(Vitess::Activerecord::Migration)
+ActiveRecord::Migration.prepend(Vitess::Activerecord::AppMigration)
+```
+
 
 ## Development
 
