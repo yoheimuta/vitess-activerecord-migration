@@ -16,4 +16,9 @@ RSpec.configure do |config|
   config.before(:suite) do
     RailsSupport.setup
   end
+
+  config.after(:example) do |example|
+    puts "Test failed: #{example.full_description}"
+    RailsSupport.handle_failure if example.exception
+  end
 end

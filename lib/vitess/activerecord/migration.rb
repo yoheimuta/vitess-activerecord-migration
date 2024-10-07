@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "migration/version"
-require 'active_record'
+require "active_record"
 
 module Vitess
   module Activerecord

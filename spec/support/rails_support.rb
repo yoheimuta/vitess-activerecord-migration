@@ -15,6 +15,11 @@ class RailsSupport
     rails.create_rails_app
   end
 
+  def self.handle_failure
+    rails = new
+    rails.output_test_log
+  end
+
   def create_rails_app
     FileUtils.rm_r(@rails_root, force: true)
     system("bundle exec rails new #{@rails_root} --minimal --skip-bundle --skip-test --skip-git --skip-spring --skip-listen --skip-docker --skip-asset-pipeline", exception: true)
@@ -103,6 +108,11 @@ class RailsSupport
     FileUtils.rm_r(File.join(@rails_root, "lib", "vitess"))
     FileUtils.rm(File.join(@rails_root, "config", "initializers", "app_migration.rb"))
     copy_template_file("config", "initializers", "migration.rb")
+  end
+
+  def output_test_log
+    log_path = File.join(@rails_root, "log", "test.log")
+    puts File.read(log_path)
   end
 
   private
