@@ -22,7 +22,7 @@ ActiveRecord::Migration.prepend(Vitess::Activerecord::Migration)
 
 The default ddl strategy is `vitess` with no options.
 
-When you want to set the ddl strategy and its options for one shot, you can set them in the migration file.
+When you want to change the ddl strategy and its options for one shot, you can set them in the migration file.
 
 ```ruby
 def default_ddl_strategy
@@ -35,7 +35,7 @@ def change
 end
 ```
 
-When you want to set the default ddl strategy and its options, you can override the following methods.
+When you want to change the default ddl strategy and its options, you can override the following methods.
 
 ```ruby
 # lib/vitess/activerecord/app_migration.rb
@@ -57,6 +57,24 @@ ActiveRecord::Migration.prepend(Vitess::Activerecord::Migration)
 ActiveRecord::Migration.prepend(Vitess::Activerecord::AppMigration)
 ```
 
+When you want to change the log parameters during the migration, you can override the following method.
+
+```ruby
+# lib/vitess/activerecord/app_migration.rb
+module Vitess
+  module Activerecord
+    module AppMigration
+      def migration_log_columns
+        %w[
+          migration_uuid
+          progress
+          eta_seconds
+        ]
+      end
+    end
+  end
+end
+```
 
 ## Development
 
