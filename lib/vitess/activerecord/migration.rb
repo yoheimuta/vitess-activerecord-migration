@@ -24,6 +24,23 @@ module Vitess
         7200 # 120 minutes
       end
 
+      # Returns the columns of SHOW VITESS_MIGRATIONS to log during the run.
+      #
+      # Override this method if you want to change the default columns.
+      def migration_log_columns
+        %w[
+          migration_uuid
+          migration_statement
+          added_timestamp
+          started_timestamp
+          last_throttled_timestamp
+          last_cutover_attempt_timestamp
+          is_immediate_operation
+          progress
+          eta_seconds
+        ]
+      end
+
       # Override exec_migration to set the default DDL strategy to vitess.
       # This method is called every time a migration is executed.
       # If you want to use a different DDL strategy, call with_ddl_strategy inside the change method or elsewhere.
@@ -103,8 +120,7 @@ module Vitess
             id = migration["id"]
             next if @stopped_uuid.include?(id)
 
-            details = %w[migration_uuid migration_statement added_timestamp started_timestamp is_immediate_operation progress eta_seconds retries]
-            detail_message = details.map { |column| "#{column}: #{migration[column]}" }.join(" | ")
+            detail_message = migration_log_columns.map { |column| "#{column}: #{migration[column]}" }.join(" | ")
             Rails.logger.info("Vitess Migration #{id} checking status, #{detail_message}")
 
             status = migration["migration_status"]
