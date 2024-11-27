@@ -24,6 +24,7 @@ jobs:
           - "~> 6.1.0"
         vitess:
           - "20.0"
+          - "21.0"
 
     steps:
     - uses: actions/checkout@v4
