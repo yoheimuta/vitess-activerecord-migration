@@ -1,5 +1,9 @@
 # Vitess::Activerecord::Migration
 
+[![Ruby](https://github.com/yoheimuta/vitess-activerecord-migration/actions/workflows/main.yml/badge.svg)](https://github.com/yoheimuta/vitess-activerecord-migration/actions/workflows/main.yml)
+[![Gem Version](https://badge.fury.io/rb/vitess-activerecord-migration.svg)](https://badge.fury.io/rb/vitess-activerecord-migration)
+[![License](http://img.shields.io/:license-mit-blue.svg)](https://github.com/yoheimuta/protolint/blob/master/LICENSE)
+
 vitess-activerecord-migration is a gem for integrating Vitess with ActiveRecord migrations.
 
 Vitess::Activerecord::Migration provides tools to integrate Vitess with ActiveRecord migrations, 
