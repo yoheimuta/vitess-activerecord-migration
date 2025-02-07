@@ -35,8 +35,8 @@ function checkKeyspaceServing() {
   nb_of_replica=$3
 
   # Use mariadb for now because of "mysql: Deprecated program name. It will be removed in a future release, use '/usr/bin/mariadb' instead."
-  # And disable ssl-mode to address "ERROR 2026 (HY000): TLS/SSL error: SSL is required, but the server does not support it"
-  out=$(mariadb --ssl-mode=DISABLED -h 127.0.0.1 -u user --table --execute="show vitess_tablets")
+  # And skip ssl to address "ERROR 2026 (HY000): TLS/SSL error: SSL is required, but the server does not support it"
+  out=$(mariadb --skip-ssl -h 127.0.0.1 -u user --table --execute="show vitess_tablets")
   numtablets=$(echo "$out" | grep -E "$ks(.*)$shard(.*)PRIMARY(.*)SERVING|$ks(.*)$shard(.*)REPLICA(.*)SERVING|$ks(.*)$shard(.*)RDONLY(.*)SERVING" | wc -l)
   if [[ $numtablets -ge $((nb_of_replica+1)) ]]; then
     echo "Shard $ks/$shard is serving"
