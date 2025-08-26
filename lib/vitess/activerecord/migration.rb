@@ -7,6 +7,7 @@ module Vitess
   module Activerecord
     module Migration
       class Error < StandardError; end
+      class Failed < Error; end
 
       # Returns the default DDL strategy.
       # This method is called and set before executing the change, up, or down methods.
@@ -114,7 +115,18 @@ module Vitess
         @stopped_uuid ||= []
 
         loop do
+          # A Rails migration will create a separate Vitess migration for each DDL submitted by Rails.
+          # Each Rails migration has a unique version and this is used to group the resulting Vitess migrations using the `migration_context` field.
+          # Vitess records the DDL submitted by Rails in the `migration_statement` column.
+          # If the Rails migration fails and is later retried, Vitess will create additional Vitess migrations with the same `migration_context` from the previous attempt.
+          # Vitess will immediately mark "duplicate" DDLs that were previously successful as complete.
+          # Vitess will retry "duplicate" DDLs that were previously unsuccessful.
+          # The overall Rails migration status is determined by the `migration_status` of the last Vitess migration of each DDL.
+          # For details on Vitess duplicate migration detection, see:
+          # https://vitess.io/docs/22.0/user-guides/schema-changes/advanced-usage/
           migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{@migration_context}'")
+            .group_by { |migration| migration['migration_statement'] }
+            .map { |_, migrations| migrations.last }
 
           migrations.each do |migration|
             id = migration["id"]
@@ -130,6 +142,7 @@ module Vitess
                 Rails.logger.info("Vitess Migration #{id} completed successfully at #{migration["completed_timestamp"]}")
               when "failed"
                 Rails.logger.error("Vitess Migration #{id} failed: #{migration["message"]} at #{migration["completed_timestamp"]}")
+                raise Failed, "Vitess Migration #{id} failed: #{migration["message"]}"
               when "cancelled"
                 Rails.logger.warn("Vitess Migration #{id} was cancelled at #{migration["cancelled_timestamp"]}")
               end
@@ -154,6 +167,7 @@ module Vitess
           interval_seconds = [interval_seconds * 2, max_interval_seconds].min
         end
       rescue => e
+        raise e if e.class == Failed
         Rails.logger.error("An error occurred while waiting for Vitess DDL: #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))
       end
