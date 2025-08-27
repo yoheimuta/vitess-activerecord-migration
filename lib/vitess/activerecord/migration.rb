@@ -20,11 +20,22 @@ module Vitess
       end
 
       # Returns the timeout seconds for waiting for the completion of the DDL statement.
-      # Even after the timeout, the migration on Vitess will not be stopped, but a warning will be logged.
+      # If the DDL exceeds the timeout:
+      #
+      # * A warning will be logged.
+      # * An error will be raised and halt the Rails migration if `raise_on_timeout` is `true`.
+      # * The Vitess migration will continue.
       #
       # Override this method if you want to change the default timeout.
       def wait_timeout_seconds
         7200 # 120 minutes
+      end
+
+      # Returns whether an error will be raised when the DDL statement exceeds wait_timeout_seconds.
+      #
+      # Override this method if you want to change how timeouts are handled.
+      def raise_on_timeout
+        true
       end
 
       # Returns the columns of SHOW VITESS_MIGRATIONS to log during the run.
@@ -171,7 +182,8 @@ module Vitess
           interval_seconds = [interval_seconds * 2, max_interval_seconds].min
         end
       rescue => e
-        raise e if [Failed, Cancelled, TimedOut].include?(e.class)
+        raise e if [Failed, Cancelled].include?(e.class)
+        raise e if e.class == TimedOut && raise_on_timeout
         Rails.logger.error("An error occurred while waiting for Vitess DDL: #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))
       end
