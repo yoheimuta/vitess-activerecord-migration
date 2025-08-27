@@ -9,6 +9,7 @@ module Vitess
       class Error < StandardError; end
       class Failed < Error; end
       class Cancelled < Error; end
+      class TimedOut < Error; end
 
       # Returns the default DDL strategy.
       # This method is called and set before executing the change, up, or down methods.
@@ -161,6 +162,7 @@ module Vitess
 
           if Time.now - start_time > timeout_seconds
             Rails.logger.warn("Vitess Migration did not complete within #{timeout_seconds} seconds. Timing out.")
+            raise TimedOut, "Vitess Migration did not complete within #{timeout_seconds} seconds."
             break
           end
 
@@ -169,7 +171,7 @@ module Vitess
           interval_seconds = [interval_seconds * 2, max_interval_seconds].min
         end
       rescue => e
-        raise e if [Failed, Cancelled].include?(e.class)
+        raise e if [Failed, Cancelled, TimedOut].include?(e.class)
         Rails.logger.error("An error occurred while waiting for Vitess DDL: #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))
       end
