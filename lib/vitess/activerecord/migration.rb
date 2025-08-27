@@ -8,6 +8,7 @@ module Vitess
     module Migration
       class Error < StandardError; end
       class Failed < Error; end
+      class Cancelled < Error; end
 
       # Returns the default DDL strategy.
       # This method is called and set before executing the change, up, or down methods.
@@ -145,6 +146,7 @@ module Vitess
                 raise Failed, "Vitess Migration #{id} failed: #{migration["message"]}"
               when "cancelled"
                 Rails.logger.warn("Vitess Migration #{id} was cancelled at #{migration["cancelled_timestamp"]}")
+                raise Cancelled, "Vitess Migration #{id} was cancelled: #{migration["message"]}"
               end
               @stopped_uuid << id
             else
@@ -167,7 +169,7 @@ module Vitess
           interval_seconds = [interval_seconds * 2, max_interval_seconds].min
         end
       rescue => e
-        raise e if e.class == Failed
+        raise e if [Failed, Cancelled].include?(e.class)
         Rails.logger.error("An error occurred while waiting for Vitess DDL: #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))
       end

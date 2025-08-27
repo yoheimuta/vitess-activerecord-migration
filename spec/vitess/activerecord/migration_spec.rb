@@ -559,6 +559,162 @@ RSpec.describe Vitess::Activerecord::Migration do
             expect(ActiveRecord::Base.connection.schema_version).to eq(expected_schema_version)
           end
         end
+
+        context "when a Vitess migration is cancelled" do
+          it "db:migrate" do
+            # Create a test table
+            table_name, migration_context = rails.create_test_vitess_users
+
+            # Confirm that the table has been created
+            expect(ActiveRecord::Base.connection.tables).to include(table_name)
+
+            # Confirm that Vitess has executed the migration
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+            expect(migrations.count).to eq(1)
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("complete")
+            end
+
+            # Record the schema version before attempting the alter
+            schema_version_before_alter = ActiveRecord::Base.connection.schema_version
+
+            # Generate migration that alters the table
+            migration_content2 = <<-MIGRATION
+        def default_ddl_strategy
+          # Postpone completion so we can cancel it for testing
+          "vitess --postpone-completion"
+        end
+
+        def change
+          add_column :test_vitess_users, :email, :string
+        end
+            MIGRATION
+            migration_context2 = rails.generate_migration("add_email_to_#{table_name}", content: migration_content2, skip_migration: true)
+
+            # Start background thread to monitor the resulting Vitess migrations and cancel them
+            Thread.new do
+              loop do
+                migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context2}'")
+                puts "Migration monitor: Found #{migrations.count} migrations for #{migration_context2}"
+                if migrations.count > 0
+                  migrations.each do |migration|
+                    puts "Migration monitor: Cancelling migration #{migration['migration_uuid']}"
+                    ActiveRecord::Base.connection.execute("ALTER VITESS_MIGRATION '#{migration['migration_uuid']}' cancel")
+                  end
+                  break
+                end
+                sleep 0.5
+              end
+            rescue => e
+              puts "Migration monitor: error: #{e.message}"
+            end
+
+            # Confirm that the Rails migration exits with an error
+            expect { rails.run("rails db:migrate")}.to raise_error RuntimeError
+
+            # Confirm that the Vitess migration was cancelled
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context2}'")
+            expect(migrations.count).to eq(1)
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("cancelled")
+              expect(migration["message"]).to match(/CANCEL issued by user/)
+            end
+
+            # Confirm that the Rails schema version hasn't changed
+            expect(ActiveRecord::Base.connection.schema_version).to eq(schema_version_before_alter)
+
+            # Start background thread to monitor the resulting Vitess migrations and complete them
+            Thread.new do
+              loop do
+                migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS WHERE migration_context = \"#{migration_context2}\" and migration_status != \"cancelled\"")
+                puts "Migration monitor: Found #{migrations.count} non-cancelled migrations for #{migration_context2}"
+                if migrations.count > 0
+                  migrations.each do |migration|
+                    puts "Migration monitor: Completing migration #{migration['migration_uuid']}"
+                    ActiveRecord::Base.connection.execute("ALTER VITESS_MIGRATION '#{migration['migration_uuid']}' complete")
+                  end
+                  break
+                end
+                sleep 0.5
+              end
+            rescue => e
+              puts "Migration monitor: error: #{e.message}"
+            end
+
+            # Confirm that a retry succeeds
+            expect { rails.run("rails db:migrate")}.not_to raise_error
+
+            # Confirm that the Vitess migration succeeded
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context2}'")
+            expect(migrations.count).to eq(2)
+            migration = migrations[0]
+            expect(migration["migration_status"]).to eq("cancelled")
+            expect(migration["message"]).to match(/CANCEL issued by user/)
+            migration = migrations[1]
+            expect(migration["migration_status"]).to eq("complete")
+            expect(migration["message"]).to match("")
+
+            # Confirm that the Rails schema version is up-to-date
+            expected_schema_version = migration_context2[0,14].to_i
+            expect(ActiveRecord::Base.connection.schema_version).to eq(expected_schema_version)
+          end
+        end
+
+        context "when a Vitess migration times out" do
+          it "db:migrate exits with an error" do
+            # Create a test table
+            table_name, migration_context = rails.create_test_vitess_users
+
+            # Confirm that the table has been created
+            expect(ActiveRecord::Base.connection.tables).to include(table_name)
+
+            # Confirm that Vitess has executed the migration
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context}'")
+            expect(migrations.count).to eq(1)
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("complete")
+            end
+
+            # Record the schema version before attempting the alter
+            schema_version_before_alter = ActiveRecord::Base.connection.schema_version
+
+            # Generate migration that alters the table
+            migration_content2 = <<-MIGRATION
+        def default_ddl_strategy
+          # Postpone completion so we can simulate a long-running migration and test timeouts
+          "vitess --postpone-completion"
+        end
+
+        def wait_timeout_seconds
+          # Reduce timeout for test to trigger a timed out migration
+          3
+        end
+
+        def change
+          add_column :test_vitess_users, :email, :string
+        end
+            MIGRATION
+            migration_context2 = rails.generate_migration("add_email_to_#{table_name}", content: migration_content2, skip_migration: true)
+
+            # Confirm that the Rails migration exits with an error
+            expect { rails.run("rails db:migrate")}.to raise_error RuntimeError
+
+            # Confirm that the Vitess migration was still running
+            migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{migration_context2}'")
+            expect(migrations.count).to eq(1)
+            migrations.each do |migration|
+              expect(migration["migration_status"]).to eq("running")
+            end
+
+            # Confirm that the Rails schema version hasn't changed
+            expect(ActiveRecord::Base.connection.schema_version).to eq(schema_version_before_alter)
+
+            # Cancel Vitess migrations to avoid blocking other tests
+            migrations.each do |migration|
+              ActiveRecord::Base.connection.execute("ALTER VITESS_MIGRATION '#{migration['migration_uuid']}' cancel")
+            end
+          end
+        end
       end
     end
   end
