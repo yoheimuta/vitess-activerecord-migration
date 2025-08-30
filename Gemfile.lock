@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     vitess-activerecord-migration (0.3.0)
-      activerecord (>= 7.0)
+      activerecord (>= 7.1)
 
 GEM
   remote: https://rubygems.org/

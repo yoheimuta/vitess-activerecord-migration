@@ -15,6 +15,14 @@ allowing for seamless database schema changes in a Vitess environment.
 gem 'vitess-activerecord-migration'
 ```
 
+## Supported Versions
+
+- Ruby: 3.2, 3.3, 3.4
+- Rails: 7.1, 7.2, 8.0
+- Vitess: 20.0, 21.0
+
+Other versions may work but are not officially tested.
+
 ## Usage
 
 Create a config file under config/initializers.
