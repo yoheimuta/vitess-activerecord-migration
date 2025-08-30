@@ -7,6 +7,9 @@ module Vitess
   module Activerecord
     module Migration
       class Error < StandardError; end
+      class Failed < Error; end
+      class Cancelled < Error; end
+      class TimedOut < Error; end
 
       # Returns the default DDL strategy.
       # This method is called and set before executing the change, up, or down methods.
@@ -17,11 +20,22 @@ module Vitess
       end
 
       # Returns the timeout seconds for waiting for the completion of the DDL statement.
-      # Even after the timeout, the migration on Vitess will not be stopped, but a warning will be logged.
+      # If the DDL exceeds the timeout:
+      #
+      # * A warning will be logged.
+      # * An error will be raised and halt the Rails migration if `raise_on_timeout` is `true`.
+      # * The Vitess migration will continue.
       #
       # Override this method if you want to change the default timeout.
       def wait_timeout_seconds
         7200 # 120 minutes
+      end
+
+      # Returns whether an error will be raised when the DDL statement exceeds wait_timeout_seconds.
+      #
+      # Override this method if you want to change how timeouts are handled.
+      def raise_on_timeout
+        true
       end
 
       # Returns the columns of SHOW VITESS_MIGRATIONS to log during the run.
@@ -114,7 +128,18 @@ module Vitess
         @stopped_uuid ||= []
 
         loop do
+          # A Rails migration will create a separate Vitess migration for each DDL submitted by Rails.
+          # Each Rails migration has a unique version and this is used to group the resulting Vitess migrations using the `migration_context` field.
+          # Vitess records the DDL submitted by Rails in the `migration_statement` column.
+          # If the Rails migration fails and is later retried, Vitess will create additional Vitess migrations with the same `migration_context` from the previous attempt.
+          # Vitess will immediately mark "duplicate" DDLs that were previously successful as complete.
+          # Vitess will retry "duplicate" DDLs that were previously unsuccessful.
+          # The overall Rails migration status is determined by the `migration_status` of the last Vitess migration of each DDL.
+          # For details on Vitess duplicate migration detection, see:
+          # https://vitess.io/docs/22.0/user-guides/schema-changes/advanced-usage/
           migrations = ActiveRecord::Base.connection.select_all("SHOW VITESS_MIGRATIONS LIKE '#{@migration_context}'")
+            .group_by { |migration| migration['migration_statement'] }
+            .map { |_, migrations| migrations.last }
 
           migrations.each do |migration|
             id = migration["id"]
@@ -130,8 +155,10 @@ module Vitess
                 Rails.logger.info("Vitess Migration #{id} completed successfully at #{migration["completed_timestamp"]}")
               when "failed"
                 Rails.logger.error("Vitess Migration #{id} failed: #{migration["message"]} at #{migration["completed_timestamp"]}")
+                raise Failed, "Vitess Migration #{id} failed: #{migration["message"]}"
               when "cancelled"
                 Rails.logger.warn("Vitess Migration #{id} was cancelled at #{migration["cancelled_timestamp"]}")
+                raise Cancelled, "Vitess Migration #{id} was cancelled: #{migration["message"]}"
               end
               @stopped_uuid << id
             else
@@ -146,6 +173,7 @@ module Vitess
 
           if Time.now - start_time > timeout_seconds
             Rails.logger.warn("Vitess Migration did not complete within #{timeout_seconds} seconds. Timing out.")
+            raise TimedOut, "Vitess Migration did not complete within #{timeout_seconds} seconds."
             break
           end
 
@@ -154,6 +182,8 @@ module Vitess
           interval_seconds = [interval_seconds * 2, max_interval_seconds].min
         end
       rescue => e
+        raise e if [Failed, Cancelled].include?(e.class)
+        raise e if e.class == TimedOut && raise_on_timeout
         Rails.logger.error("An error occurred while waiting for Vitess DDL: #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))
       end

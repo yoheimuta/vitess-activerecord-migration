@@ -57,6 +57,9 @@ class RailsSupport
     @migration_files.each do |f|
       FileUtils.rm(f)
     end
+
+    # Cancel any leftover Vitess migrations (otherwise subsequent tests runs might wait indefinitely for them to finish)
+    ActiveRecord::Base.connection.execute("ALTER VITESS_MIGRATION cancel all")
   end
 
   def run(command, rails_env = "test")
